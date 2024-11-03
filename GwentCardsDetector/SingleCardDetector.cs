@@ -6,13 +6,13 @@ using System.Diagnostics;
 
 namespace GwentCardsDetector;
 
-sealed class SingleCardDetector
+static class SingleCardDetector
 {
-    const string InputImagePath = @".\input\{0}.jpg";
+    const string InputImagePath = @"E:\source\projects\GwentCardsDetector\input\{0}";
     const string TemplatesPath = @".\templates";
-    const string ResultImagePath = @".\result.jpg";
+    const string ResultImagePath = @"E:\source\projects\GwentCardsDetector\result.jpg";
 
-    public void Detect(string inputImageName)
+    public static void Detect(string inputImageName)
     {
         string inputImagePath = string.Format(InputImagePath, inputImageName);
         using Image<Rgba32> inputImage = Image.Load<Rgba32>(inputImagePath);
@@ -29,15 +29,12 @@ sealed class SingleCardDetector
                 .Grayscale()
                 .BinaryThreshold(0.35f));
 
-        //inputImage.Save(@"E:\projects\GwentCardsDetector\processed.jpg");
-
         Rectangle cardRectangle = FindCardEdges(inputImage);
 
         if (cardRectangle != Rectangle.Empty)
         {
             using Image<Rgba32> originalImage = Image.Load<Rgba32>(inputImagePath);
             using Image<Rgba32> croppedImage = CropImage(originalImage, cardRectangle);
-            //croppedImage.Save(@"E:\projects\GwentCardsDetector\cropped.jpg");
 
             string deckName = ResolveDeckName(croppedImage);
             Console.WriteLine($"Карта належить до колоди: " + deckName);
@@ -46,7 +43,7 @@ sealed class SingleCardDetector
             finalImage.Mutate(ctx => ctx.Draw(Pens.Solid(Color.Red, 6), cardRectangle));
             finalImage.Save(ResultImagePath);
 
-            System.Diagnostics.Process.Start(new ProcessStartInfo(ResultImagePath) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(ResultImagePath) { UseShellExecute = true });
         }
         else
         {
@@ -54,7 +51,7 @@ sealed class SingleCardDetector
         }
     }
 
-    string ResolveDeckName(Image<Rgba32> inputCard)
+    static string ResolveDeckName(Image<Rgba32> inputCard)
     {
         string[] templates = Directory.GetFiles(TemplatesPath);
         Dictionary<string, double> similarities = [];
@@ -66,8 +63,6 @@ sealed class SingleCardDetector
             using Image<Rgba32> templateImage = Image.Load<Rgba32>(template);
             templateImage.Mutate(x => x.BlackWhite());
             inputCard.Mutate(ctx => ctx.Resize(templateImage.Size));
-            //templateImage.Save(@$"E:\source\projects\GwentCardsDetector\template.jpg");
-            //inputCard.Save(@$"E:\source\projects\GwentCardsDetector\input.jpg");
             double similarity = CalculatePixelSimilarity(inputCard, templateImage);
             string templateName = Path.GetFileNameWithoutExtension(template);
             similarities.Add(templateName, similarity);
@@ -76,7 +71,7 @@ sealed class SingleCardDetector
         return MapTemplateNameToDeckName(similarities.MaxBy(x => x.Value).Key);
     }
 
-    string MapTemplateNameToDeckName(string templateName)
+    static string MapTemplateNameToDeckName(string templateName)
         => templateName switch
         {
             "monsters-card" => "Монстри",
@@ -92,7 +87,7 @@ sealed class SingleCardDetector
             _ => "Невiдомо"
         };
 
-    double CalculatePixelSimilarity(Image<Rgba32> croppedInputCard, Image<Rgba32> croppedTemplate)
+    static double CalculatePixelSimilarity(Image<Rgba32> croppedInputCard, Image<Rgba32> croppedTemplate)
     {
         int matchingPixels = 0;
         int totalPixels = croppedInputCard.Width * croppedInputCard.Height;
@@ -111,14 +106,14 @@ sealed class SingleCardDetector
         return (double)matchingPixels / totalPixels;
     }
 
-    bool ArePixelsSimilar(Rgba32 pixel1, Rgba32 pixel2, int tolerance = 10)
+    static bool ArePixelsSimilar(Rgba32 pixel1, Rgba32 pixel2, int tolerance = 10)
         => Math.Abs(pixel1.R - pixel2.R) <= tolerance
         && Math.Abs(pixel1.G - pixel2.G) <= tolerance
         && Math.Abs(pixel1.B - pixel2.B) <= tolerance;
 
-    Image<Rgba32> CropImage(Image<Rgba32> image, Rectangle cardRectangle) => image.Clone(ctx => ctx.Crop(cardRectangle));
+    static Image<Rgba32> CropImage(Image<Rgba32> image, Rectangle cardRectangle) => image.Clone(ctx => ctx.Crop(cardRectangle));
 
-    Rectangle FindCardEdges(Image<Rgba32> image)
+    static Rectangle FindCardEdges(Image<Rgba32> image)
     {
         int width = image.Width;
         int height = image.Height;
@@ -151,5 +146,5 @@ sealed class SingleCardDetector
         return Rectangle.Empty;
     }
 
-    bool IsBlack(Rgba32 pixel) => pixel.R == 0 && pixel.G == 0 && pixel.B == 0;
+    static bool IsBlack(Rgba32 pixel) => pixel.R == 0 && pixel.G == 0 && pixel.B == 0;
 }
