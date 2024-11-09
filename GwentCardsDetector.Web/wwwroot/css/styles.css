@@ -1,0 +1,103 @@
+﻿body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.content-wrapper {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Заголовок */
+h1.title {
+    font-size: 32px;
+    color: #007bff;
+    margin-bottom: 30px;
+}
+
+/* Форма завантаження */
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.upload-container {
+    width: 100%;
+    padding: 20px;
+    border: 2px dashed #007bff;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+}
+
+label {
+    font-size: 16px;
+    color: #333;
+}
+
+.file-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #ffffff;
+    cursor: pointer;
+}
+
+    .file-input:focus {
+        outline: none;
+        border-color: #007bff;
+    }
+
+/* Кнопка завантаження */
+.btn-submit {
+    background-color: #28a745;
+    border: none;
+    padding: 15px 25px;
+    color: #ffffff;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+    .btn-submit:hover {
+        background-color: #218838;
+    }
+
+    .btn-submit:active {
+        background-color: #1e7e34;
+    }
+
+/* Результати */
+.results {
+    margin-top: 30px;
+    text-align: center;
+    background-color: #f7f7f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.result-image {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}

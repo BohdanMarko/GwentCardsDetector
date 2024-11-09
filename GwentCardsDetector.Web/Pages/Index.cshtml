@@ -1,0 +1,37 @@
+﻿@page
+@model GwentCardsDetector.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Gwent Card Detector";
+}
+
+<div class="content-wrapper">
+    <h1 class="title">Gwent Card Detector</h1>
+
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+        <div class="upload-container">
+            <label for="file">Upload your card image:</label>
+            <input type="file" id="file" name="UploadedFile" asp-for="UploadedFile" accept="image/*" class="file-input" />
+        </div>
+        <button type="submit" class="btn-submit">Detect Cards</button>
+    </form>
+
+    @if (Model.Result != null)
+    {
+        <div class="results">
+            <h2>Detection Results</h2>
+            @if (!string.IsNullOrEmpty(Model.Result.Message))
+            {
+                <p class="error">@Model.Result.Message</p>
+            }
+            else
+            {
+                <p>Detected Deck: <strong>@Model.Result.DetectedDeck</strong></p>
+                <img src="@Model.Result.HighlightedImagePath" alt="Highlighted Cards" class="result-image">
+            }
+        </div>
+    }
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/styles.css" />
+}

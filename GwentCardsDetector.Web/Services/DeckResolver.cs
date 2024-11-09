@@ -2,31 +2,32 @@
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace GwentCardsDetector;
+namespace GwentCardsDetector.Web.Services;
 
 public sealed class DeckResolver
 {
-    const string TemplatesPath = @".\templates";
+    const string TemplatesPath = @"wwwroot/templates";
 
     public static string ResolveDeckName(Image<Rgba32> inputCard)
     {
         string[] templates = Directory.GetFiles(TemplatesPath);
-        Dictionary<string, double> similarities = new Dictionary<string, double>();
+        Dictionary<string, double> similarities = [];
 
         inputCard.Mutate(x => x.AutoOrient());
-        var newInputCard = AdjustBrightnessToTemplate(CropImage(inputCard));
+        CropImage(inputCard);
+        Image<Rgba32> preparedInputCard = AdjustBrightnessToTemplate(inputCard);
 
         foreach (string template in templates)
         {
             using Image<Rgba32> templateImage = Image.Load<Rgba32>(template);
+            CropImage(templateImage);
+            var preparedTemplateImage = AdjustBrightnessToTemplate(templateImage);
+            preparedInputCard.Mutate(ctx => ctx.Resize(preparedTemplateImage.Size));
 
-            var newTemplateImage = AdjustBrightnessToTemplate(CropImage(templateImage));
-            newInputCard.Mutate(ctx => ctx.Resize(newTemplateImage.Size));
+            //newTemplateImage.Save(@"E:\source\projects\GwentCardsDetector\template.jpg");
+            //newInputCard.Save(@"E:\source\projects\GwentCardsDetector\input.jpg");
 
-            newTemplateImage.Save(@"E:\source\projects\GwentCardsDetector\template.jpg");
-            newInputCard.Save(@"E:\source\projects\GwentCardsDetector\input.jpg");
-
-            double similarity = CalculatePixelSimilarity(newInputCard, newTemplateImage);
+            double similarity = CalculatePixelSimilarity(preparedInputCard, preparedTemplateImage);
             string templateName = Path.GetFileNameWithoutExtension(template);
             similarities.Add(templateName, similarity);
         }
@@ -34,28 +35,16 @@ public sealed class DeckResolver
         return MapTemplateNameToDeckName(similarities.MaxBy(x => x.Value).Key);
     }
 
-    /// <summary>
-    /// Adjusts the brightness of the input image to match the template image.
-    /// </summary>
     static Image<Rgba32> AdjustBrightnessToTemplate(Image<Rgba32> image)
     {
-        // Calculate average brightness of the image
         float avgBrightness = CalculateAverageBrightness(image);
-
         // Target brightness level (can be tuned as needed)
         const float targetBrightness = 0.1f;
-
-        // Adjust brightness to match the target level
         float adjustmentFactor = targetBrightness / avgBrightness;
-
         image.Mutate(ctx => ctx.Brightness(adjustmentFactor));
-
         return image;
     }
 
-    /// <summary>
-    /// Calculates the average brightness of an image.
-    /// </summary>
     static float CalculateAverageBrightness(Image<Rgba32> image)
     {
         float totalBrightness = 0;
@@ -74,7 +63,7 @@ public sealed class DeckResolver
         return totalBrightness / totalPixels;
     }
 
-    static Image<Rgba32> CropImage(Image<Rgba32> image, int cropTopBottom = 50, int cropLeftRight = 30)
+    static void CropImage(Image<Rgba32> image, int cropTopBottom = 50, int cropLeftRight = 30)
     {
         if (cropTopBottom * 2 >= image.Height || cropLeftRight * 2 >= image.Width)
             throw new ArgumentException("Crop amount is too large for the image size.");
@@ -86,7 +75,7 @@ public sealed class DeckResolver
             image.Height - cropTopBottom * 2
         );
 
-        return image.Clone(ctx => ctx.Crop(cropRectangle));
+        image.Mutate(ctx => ctx.Crop(cropRectangle));
     }
 
     static string MapTemplateNameToDeckName(string templateName) => templateName switch
