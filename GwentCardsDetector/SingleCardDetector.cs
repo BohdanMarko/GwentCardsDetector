@@ -29,6 +29,8 @@ static class SingleCardDetector
                 .Grayscale()
                 .BinaryThreshold(0.35f));
 
+        inputImage.Save(@"E:\source\projects\GwentCardsDetector\one.jpg");
+
         Rectangle cardRectangle = FindCardEdges(inputImage);
 
         if (cardRectangle != Rectangle.Empty)
@@ -36,7 +38,7 @@ static class SingleCardDetector
             using Image<Rgba32> originalImage = Image.Load<Rgba32>(inputImagePath);
             using Image<Rgba32> croppedImage = CropImage(originalImage, cardRectangle);
 
-            string deckName = ResolveDeckName(croppedImage);
+            string deckName = DeckResolver.ResolveDeckName(croppedImage);
             Console.WriteLine($"Карта належить до колоди: " + deckName);
 
             using Image<Rgba32> finalImage = Image.Load<Rgba32>(inputImagePath);
@@ -50,66 +52,6 @@ static class SingleCardDetector
             Console.WriteLine("Карта не знайдена");
         }
     }
-
-    static string ResolveDeckName(Image<Rgba32> inputCard)
-    {
-        string[] templates = Directory.GetFiles(TemplatesPath);
-        Dictionary<string, double> similarities = [];
-
-        inputCard.Mutate(x => x.AutoOrient().BlackWhite());
-
-        foreach (string template in templates)
-        {
-            using Image<Rgba32> templateImage = Image.Load<Rgba32>(template);
-            templateImage.Mutate(x => x.BlackWhite());
-            inputCard.Mutate(ctx => ctx.Resize(templateImage.Size));
-            double similarity = CalculatePixelSimilarity(inputCard, templateImage);
-            string templateName = Path.GetFileNameWithoutExtension(template);
-            similarities.Add(templateName, similarity);
-        }
-
-        return MapTemplateNameToDeckName(similarities.MaxBy(x => x.Value).Key);
-    }
-
-    static string MapTemplateNameToDeckName(string templateName)
-        => templateName switch
-        {
-            "monsters-card" => "Монстри",
-            "nilfgaard-card" => "Нiльфгаард",
-            "redaniya-card" => "Реданiя",
-            "scoiatael-card" => "Скольятели",
-            "skellige-card" => "Скелiге",
-            "temeriya-card" => "Темерiя",
-            "toussaint-card" => "Туссант",
-            "velen-card" => "Велен",
-            "wild_hunt-card" => "Дика Охота",
-            "witchers-card" => "Вiдьмаки",
-            _ => "Невiдомо"
-        };
-
-    static double CalculatePixelSimilarity(Image<Rgba32> croppedInputCard, Image<Rgba32> croppedTemplate)
-    {
-        int matchingPixels = 0;
-        int totalPixels = croppedInputCard.Width * croppedInputCard.Height;
-
-        for (int y = 0; y < croppedInputCard.Height; y++)
-        {
-            for (int x = 0; x < croppedInputCard.Width; x++)
-            {
-                if (ArePixelsSimilar(croppedInputCard[x, y], croppedTemplate[x, y]))
-                {
-                    matchingPixels++;
-                }
-            }
-        }
-
-        return (double)matchingPixels / totalPixels;
-    }
-
-    static bool ArePixelsSimilar(Rgba32 pixel1, Rgba32 pixel2, int tolerance = 10)
-        => Math.Abs(pixel1.R - pixel2.R) <= tolerance
-        && Math.Abs(pixel1.G - pixel2.G) <= tolerance
-        && Math.Abs(pixel1.B - pixel2.B) <= tolerance;
 
     static Image<Rgba32> CropImage(Image<Rgba32> image, Rectangle cardRectangle) => image.Clone(ctx => ctx.Crop(cardRectangle));
 
