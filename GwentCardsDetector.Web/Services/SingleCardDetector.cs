@@ -10,17 +10,18 @@ public class DetectionResult
     public string DetectedDeck { get; set; }
     public string HighlightedImagePath { get; set; }
     public string Message { get; set; }
+    public Dictionary<string, int> DeckCards { get; set; }
+    public int TotalCards { get; set; }
 }
 
-public static class SingleCardDetector
+public sealed class SingleCardDetector
 {
-    private const string TemplatesPath = "wwwroot/templates";
     private const string UploadsPath = "wwwroot/uploads";
 
     public static DetectionResult Detect(IFormFile uploadedFile)
     {
         if (uploadedFile == null || uploadedFile.Length == 0)
-            return null;
+            return new DetectionResult { Message = "Bad input image." };
 
         Directory.CreateDirectory(UploadsPath);
 
@@ -57,7 +58,9 @@ public static class SingleCardDetector
         return new DetectionResult
         {
             DetectedDeck = deckName,
-            HighlightedImagePath = $"/uploads/result_{fileName}"
+            HighlightedImagePath = $"/uploads/result_{fileName}",
+            TotalCards = 1,
+            DeckCards = new Dictionary<string, int> { { deckName, 1 } }
         };
     }
 
