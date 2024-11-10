@@ -1,0 +1,25 @@
+﻿@page
+@model GwentCardsDetector.Pages.TemplatesModel
+@{
+    ViewData["Title"] = "Gwent Card Templates";
+}
+
+<div class="content-wrapper">
+    <h1 class="title">Gwent Card Templates</h1>
+
+    <div class="templates-gallery">
+        @foreach (var template in Model.Templates)
+        {
+            <div class="template-card">
+                <img src="@template.ImagePath" alt="@template.DeckName" class="template-image" />
+                <div class="caption">@template.DeckName</div>
+            </div>
+        }
+    </div>
+
+    <a asp-page="/Index" class="btn-back">Back to Detector</a>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/templates.css" />
+}

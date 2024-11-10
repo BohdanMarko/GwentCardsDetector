@@ -15,6 +15,10 @@
         <button type="submit" class="btn-submit">Detect Cards</button>
     </form>
 
+    <div class="extra-links">
+        <a asp-page="/Templates" class="btn-view-templates">View Card Templates</a>
+    </div>
+
     @if (Model.Result != null)
     {
         <div class="results">
@@ -50,5 +54,5 @@
 </div>
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/styles.css" />
+    <link rel="stylesheet" href="~/css/index.css" />
 }
