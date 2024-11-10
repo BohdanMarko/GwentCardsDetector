@@ -1,27 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using GwentCardsDetector.Web.Services;
-using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
 
-namespace GwentCardsDetector.Web.Pages
+namespace GwentCardsDetector.Web.Pages;
+
+public sealed class IndexModel(CardsDetector cardsDetector) : PageModel
 {
-    public class IndexModel : PageModel
+    [BindProperty]
+    public IFormFile UploadedFile { get; set; }
+
+    public DetectionResult Result { get; private set; }
+
+    public async Task<IActionResult> OnPostAsync()
     {
-        [BindProperty]
-        public IFormFile UploadedFile { get; set; }
-        public DetectionResult Result { get; private set; }
-
-        public async Task<IActionResult> OnPostAsync()
+        if (UploadedFile == null || UploadedFile.Length == 0)
         {
-            if (UploadedFile == null || UploadedFile.Length == 0)
-            {
-                ModelState.AddModelError("", "Please upload a valid image.");
-                return Page();
-            }
-
-            Result = SingleCardDetector.Detect(UploadedFile);
+            ModelState.AddModelError("Error", "Please upload a valid image.");
             return Page();
         }
+
+        Result = await cardsDetector.Detect(UploadedFile);
+        return Page();
     }
 }

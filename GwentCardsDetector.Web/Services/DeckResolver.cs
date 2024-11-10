@@ -8,34 +8,32 @@ public sealed class DeckResolver
 {
     const string TemplatesPath = @"wwwroot/templates";
 
-    public static string ResolveDeckName(Image<Rgba32> inputCard)
+    public string ResolveDeckName(Image<Rgba32> inputCard)
     {
         string[] templates = Directory.GetFiles(TemplatesPath);
         Dictionary<string, double> similarities = [];
 
-        inputCard.Mutate(x => x.AutoOrient());
-        CropImage(inputCard);
-        Image<Rgba32> preparedInputCard = AdjustBrightnessToTemplate(inputCard);
+        inputCard.Mutate(ctx => ctx.AutoOrient().Crop(GetCropSettings(inputCard)));
+        Image<Rgba32> preparedInputCard = AdjustBrightness(inputCard);
 
         foreach (string template in templates)
         {
             using Image<Rgba32> templateImage = Image.Load<Rgba32>(template);
-            CropImage(templateImage);
-            var preparedTemplateImage = AdjustBrightnessToTemplate(templateImage);
+            templateImage.Mutate(ctx => ctx.Crop(GetCropSettings(templateImage)));
+            
+            Image<Rgba32> preparedTemplateImage = AdjustBrightness(templateImage);
             preparedInputCard.Mutate(ctx => ctx.Resize(preparedTemplateImage.Size));
-
-            //newTemplateImage.Save(@"E:\source\projects\GwentCardsDetector\template.jpg");
-            //newInputCard.Save(@"E:\source\projects\GwentCardsDetector\input.jpg");
-
+            
             double similarity = CalculatePixelSimilarity(preparedInputCard, preparedTemplateImage);
             string templateName = Path.GetFileNameWithoutExtension(template);
+            
             similarities.Add(templateName, similarity);
         }
 
         return MapTemplateNameToDeckName(similarities.MaxBy(x => x.Value).Key);
     }
 
-    static Image<Rgba32> AdjustBrightnessToTemplate(Image<Rgba32> image)
+    static Image<Rgba32> AdjustBrightness(Image<Rgba32> image)
     {
         float avgBrightness = CalculateAverageBrightness(image);
         // Target brightness level (can be tuned as needed)
@@ -63,20 +61,10 @@ public sealed class DeckResolver
         return totalBrightness / totalPixels;
     }
 
-    static void CropImage(Image<Rgba32> image, int cropTopBottom = 50, int cropLeftRight = 30)
-    {
-        if (cropTopBottom * 2 >= image.Height || cropLeftRight * 2 >= image.Width)
-            throw new ArgumentException("Crop amount is too large for the image size.");
-
-        var cropRectangle = new Rectangle(
-            cropLeftRight,
-            cropTopBottom,
+    static Rectangle GetCropSettings(Image<Rgba32> image, int cropTopBottom = 50, int cropLeftRight = 30)
+        => new(cropLeftRight, cropTopBottom,
             image.Width - cropLeftRight * 2,
-            image.Height - cropTopBottom * 2
-        );
-
-        image.Mutate(ctx => ctx.Crop(cropRectangle));
-    }
+            image.Height - cropTopBottom * 2);
 
     static string MapTemplateNameToDeckName(string templateName) => templateName switch
     {
@@ -90,7 +78,7 @@ public sealed class DeckResolver
         "velen-card" => "Велен",
         "wild_hunt-card" => "Дика Охота",
         "witchers-card" => "Вiдьмаки",
-        _ => "Невiдомо"
+        _ => "Невiдома колода"
     };
 
     static double CalculatePixelSimilarity(Image<Rgba32> croppedInputCard, Image<Rgba32> croppedTemplate)
@@ -113,9 +101,7 @@ public sealed class DeckResolver
     }
 
     static bool ArePixelsSimilar(Rgba32 pixel1, Rgba32 pixel2, int tolerance = 15)
-    {
-        return Math.Abs(pixel1.R - pixel2.R) <= tolerance &&
-               Math.Abs(pixel1.G - pixel2.G) <= tolerance &&
-               Math.Abs(pixel1.B - pixel2.B) <= tolerance;
-    }
+        => Math.Abs(pixel1.R - pixel2.R) <= tolerance 
+        && Math.Abs(pixel1.G - pixel2.G) <= tolerance
+        && Math.Abs(pixel1.B - pixel2.B) <= tolerance;
 }

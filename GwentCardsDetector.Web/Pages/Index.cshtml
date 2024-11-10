@@ -19,14 +19,31 @@
     {
         <div class="results">
             <h2>Detection Results</h2>
+
             @if (!string.IsNullOrEmpty(Model.Result.Message))
             {
                 <p class="error">@Model.Result.Message</p>
             }
             else
             {
-                <p>Detected Deck: <strong>@Model.Result.DetectedDeck</strong></p>
-                <img src="@Model.Result.HighlightedImagePath" alt="Highlighted Cards" class="result-image">
+                <p>Total Cards Detected: <strong>@Model.Result.TotalCards</strong></p>
+
+                @if (Model.Result.DeckCards != null && Model.Result.DeckCards.Count > 0)
+                {
+                    <div class="deck-breakdown">
+                        <h3>Deck Cards Breakdown:</h3>
+                        <ul>
+                            @foreach (var deck in Model.Result.DeckCards)
+                            {
+                                <li><strong>@deck.Key:</strong> @deck.Value cards</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="highlighted-image">
+                    <img src="@Model.Result.HighlightedImagePath" alt="Highlighted Cards" class="result-image">
+                </div>
             }
         </div>
     }

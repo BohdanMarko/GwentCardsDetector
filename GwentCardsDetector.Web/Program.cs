@@ -1,6 +1,11 @@
+using GwentCardsDetector;
+using GwentCardsDetector.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
+builder.Services.AddSingleton<DeckResolver>();
+builder.Services.AddSingleton<CardsDetector>();
 
 var app = builder.Build();
 

@@ -6,26 +6,18 @@ using GwentCardsDetector.Web.Services;
 
 namespace GwentCardsDetector;
 
-public sealed class MultipleCardsDetector
+public sealed class CardsDetector(DeckResolver deckResolver)
 {
     private const string UploadsPath = "wwwroot/uploads";
 
-    public static DetectionResult Detect(IFormFile uploadedFile)
+    public async Task<DetectionResult> Detect(IFormFile uploadedFile)
     {
         if (uploadedFile == null || uploadedFile.Length == 0)
-            return new DetectionResult { Message = "Bad input image." };
+            return new DetectionResult { Message = "Bad input image" };
 
         Directory.CreateDirectory(UploadsPath);
 
-        var fileName = Path.GetRandomFileName() + Path.GetExtension(uploadedFile.FileName);
-        var inputImagePath = Path.Combine(UploadsPath, fileName);
-
-        using (var stream = new FileStream(inputImagePath, FileMode.Create))
-        {
-            uploadedFile.CopyTo(stream);
-        }
-
-        using Image<Rgba32> inputImage = Image.Load<Rgba32>(inputImagePath);
+        using Image<Rgba32> inputImage = await Image.LoadAsync<Rgba32>(uploadedFile.OpenReadStream());
 
         inputImage.Mutate(ctx => ctx
             .GaussianBlur(1.5f)
@@ -38,15 +30,15 @@ public sealed class MultipleCardsDetector
 
         if (cardRectangles.Count == 0)
         {
-            return new DetectionResult { Message = "No cards detected." };
+            return new DetectionResult { Message = "No cards detected" };
         }
 
-        Dictionary<string, int> deckCards = new Dictionary<string, int>();
+        Dictionary<string, int> deckCards = [];
+        using Image<Rgba32> originalImage = await Image.LoadAsync<Rgba32>(uploadedFile.OpenReadStream());
         foreach (Rectangle card in cardRectangles)
         {
-            using Image<Rgba32> originalImage = Image.Load<Rgba32>(inputImagePath);
-            using Image<Rgba32> croppedImage = CropImage(originalImage, card);
-            string deckName = DeckResolver.ResolveDeckName(croppedImage);
+            using Image<Rgba32> croppedImage = originalImage.Clone(ctx => ctx.Crop(card));
+            string deckName = deckResolver.ResolveDeckName(croppedImage);
             if (deckCards.TryGetValue(deckName, out int value))
             {
                 deckCards[deckName] = ++value;
@@ -57,10 +49,10 @@ public sealed class MultipleCardsDetector
             }
         }
 
-        using Image<Rgba32> finalImage = Image.Load<Rgba32>(inputImagePath);
-        cardRectangles.ForEach(card => finalImage.Mutate(ctx => ctx.Draw(Pens.Solid(Color.Red, 6), card)));
+        cardRectangles.ForEach(card => originalImage.Mutate(ctx => ctx.Draw(Pens.Solid(Color.Red, 8), card)));
+        var fileName = Path.GetRandomFileName() + Path.GetExtension(uploadedFile.FileName);
         string resultImagePath = Path.Combine(UploadsPath, "result_" + fileName);
-        finalImage.Save(resultImagePath);
+        originalImage.Save(resultImagePath);
 
         return new DetectionResult
         {
@@ -68,11 +60,6 @@ public sealed class MultipleCardsDetector
             TotalCards = cardRectangles.Count,
             DeckCards = deckCards
         };
-    }
-
-    private static Image<Rgba32> CropImage(Image<Rgba32> image, Rectangle cardRectangle)
-    {
-        return image.Clone(ctx => ctx.Crop(cardRectangle));
     }
 
     static List<Rectangle> FindAllCardEdges(Image<Rgba32> image)
