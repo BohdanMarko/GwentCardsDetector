@@ -87,8 +87,35 @@ public sealed class CardsDetector(DeckResolver deckResolver)
         return cardRectangles;
     }
 
-    // way too simple
-    static bool IsValidCardSize(Rectangle rect) => rect.Width < 150 || rect.Height < 150 ? false : true;
+    // way too simple (not anymore)
+    static bool IsValidCardSize(Rectangle rect)
+    {
+        if (rect.Width == rect.Height)
+            return false;
+
+        const int minWidth = 220;
+        const int minHeight = 120;
+
+        if (rect.Width < minWidth || rect.Height < minHeight)
+            return false;
+
+        const double expectedAspectRatio = 1.6;
+        const double tolerance = 0.3;
+        
+        // in case if the card is rotated
+        double aspectRatio = (double)Math.Max(rect.Width, rect.Height) / Math.Min(rect.Width, rect.Height);
+
+        if (aspectRatio < (expectedAspectRatio - tolerance) || aspectRatio > (expectedAspectRatio + tolerance))
+            return false;
+
+        const int minArea = 100000;
+        int area = rect.Width * rect.Height;
+        if (area < minArea)
+            return false;
+
+        return true;
+    }
+
 
     static Rectangle FloodFill(Image<Rgba32> image, bool[,] visited, int startX, int startY)
     {

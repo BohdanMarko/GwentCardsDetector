@@ -13,6 +13,12 @@ public sealed class DeckResolver
         string[] templates = Directory.GetFiles(TemplatesPath);
         Dictionary<string, double> similarities = [];
 
+        // very dumb solution but it works for now
+        if (inputCard.Width > inputCard.Height)
+        {
+            inputCard.Mutate(ctx => ctx.Rotate(90));
+        }
+
         inputCard.Mutate(ctx => ctx.AutoOrient().Crop(GetCropSettings(inputCard)));
         Image<Rgba32> preparedInputCard = AdjustBrightness(inputCard);
 
@@ -23,7 +29,7 @@ public sealed class DeckResolver
             
             Image<Rgba32> preparedTemplateImage = AdjustBrightness(templateImage);
             preparedInputCard.Mutate(ctx => ctx.Resize(preparedTemplateImage.Size));
-            
+
             double similarity = CalculatePixelSimilarity(preparedInputCard, preparedTemplateImage);
             string templateName = Path.GetFileNameWithoutExtension(template);
             
@@ -36,7 +42,7 @@ public sealed class DeckResolver
     static Image<Rgba32> AdjustBrightness(Image<Rgba32> image)
     {
         float avgBrightness = CalculateAverageBrightness(image);
-        // Target brightness level (modify per your need)
+        // target brightness level (modify per your need)
         const float targetBrightness = 0.1f;
         float adjustmentFactor = targetBrightness / avgBrightness;
         image.Mutate(ctx => ctx.Brightness(adjustmentFactor));
