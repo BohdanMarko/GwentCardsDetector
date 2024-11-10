@@ -1,20 +1,25 @@
-﻿using GwentCardsDetector;
+using GwentCardsDetector;
+using GwentCardsDetector.Web.Services;
 
-SingleCardDetector.Detect("20241102_231546.jpg");
+var builder = WebApplication.CreateBuilder(args);
 
-//bool run = true;
-//while (run)
-//{
-//    await Console.Out.WriteLineAsync("Enter the path to the image you want to analyze:");
-//    await Console.Out.WriteAsync(">>> ");
-//    string path = Console.ReadLine();
+builder.Services.AddRazorPages();
+builder.Services.AddSingleton<DeckResolver>();
+builder.Services.AddSingleton<CardsDetector>();
 
-//    if (!File.Exists(path))
-//    {
-//        await Console.Out.WriteLineAsync("\nThe file does not exist!\n");
-//        continue;
-//    }
+var app = builder.Build();
 
-//    await Console.Out.WriteLineAsync("Detecting cards...");
-//    MultipleCardsDetector.Detect(path);
-//}
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
+
+app.MapRazorPages();
+
+app.Run();
