@@ -36,7 +36,7 @@ public sealed class DeckResolver
     static Image<Rgba32> AdjustBrightness(Image<Rgba32> image)
     {
         float avgBrightness = CalculateAverageBrightness(image);
-        // Target brightness level (can be tuned as needed)
+        // Target brightness level (modify per your need)
         const float targetBrightness = 0.1f;
         float adjustmentFactor = targetBrightness / avgBrightness;
         image.Mutate(ctx => ctx.Brightness(adjustmentFactor));
